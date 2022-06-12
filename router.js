@@ -12,17 +12,57 @@ const setData = todoList => {
   fs.writeFileSync("./data.json", JSON.stringify({ todoList }));
 };
 
-router.get("/list", (req, res) => {
+router.get("/listAll", (req, res) => {
   res.send({
     code: 200,
     data: getData(),
   });
 });
 
+router.post("/list", (req, res) => {
+  let { page = 1, size = 5, status } = req.body;
+  console.log(req.body);
+
+  const allTodoList = getData();
+  const activeTodoList = allTodoList.filter(todo => !todo.done);
+  const completedTodoList = allTodoList.filter(todo => todo.done);
+
+  let todoList = allTodoList;
+  let total = allTodoList.length;
+  switch (status) {
+    case "active":
+      todoList = activeTodoList;
+      total = activeTodoList.length;
+      break;
+    case "completed":
+      todoList = completedTodoList;
+      total = completedTodoList.length;
+      break;
+  }
+  let result = [];
+  while (page > 0) {
+    result = todoList.slice((page - 1) * size, page * size);
+    if (result.length > 0 || page === 1) {
+      break;
+    } else {
+      page--;
+    }
+  }
+  res.send({
+    code: 200,
+    total,
+    activeNum: activeTodoList.length,
+    completedNum: completedTodoList.length,
+    page,
+    size,
+    data: result,
+  });
+});
+
 router.post("/add", (req, res) => {
   console.log(req.body);
   const todoList = getData();
-  todoList.push(req.body);
+  todoList.unshift(req.body);
   setData(todoList);
   res.send({
     code: 200,
